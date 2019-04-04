@@ -47,3 +47,33 @@ saveRDS(df_schedule, "data/infokrl_schedule.rds")
 
 
 
+# begin here --------------------------------------------------------------
+df_price <- readRDS("data/infokrl_price.rds")
+krl <- readRDS("data/krl.rds") %>% 
+  count(halte_name, sort = TRUE) %>% 
+  mutate(halte_uc = toupper(halte_name),
+         halte_uc = gsub("\\s+", "", halte_uc),
+         halte_uc = ifelse(halte_uc == "TANJUNGPRIOK", "TANJUNGPRIUK", halte_uc)) %>% 
+  select(-n)
+
+df_price_final <- df_price %>% 
+  rename(sts_from_code = sts_from_name,
+         sts_to_code = sts_to_name) %>% 
+  left_join(krl %>% 
+              rename(sts_from_code = halte_uc,
+                     sts_from_name = halte_name)) %>% 
+  left_join(krl %>% 
+              rename(sts_to_code = halte_uc,
+                     sts_to_name = halte_name)) %>% 
+  select(contains("sts_from"), contains("sts_to"), price)
+
+saveRDS(df_price_final, "data/krl_price.rds")
+
+
+
+
+
+
+
+
+
