@@ -7,3 +7,5 @@ What you can find inside?
 * `krl_02_station.R` and `krl_02_route.R` clean and make `krl` and `krl_route` dataset
 * `krl_03_price.R` get KRL price data
 * `krl_04_split.R` split KRL route for each station, viz the data
+
+![](figs/krl_route_split.png)
