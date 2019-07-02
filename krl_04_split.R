@@ -60,24 +60,24 @@ ggsave("figs/krl_route.png", width = 10, height = 10)
 
 # split route -------------------------------------------------------------
 split_route <- function(schedule_id_input, route_id_input, df_route, df_station, threshold = 0.25, buffer_size = 0.0005) {
-  # get route (linestring)
+  #1 get route (linestring)
   route <- df_route %>% 
     filter(schedule_id == schedule_id_input,
            route_id == route_id_input)
   
-  # get station (point)
+  #1 get station (point)
   station <- df_station %>%
     unnest() %>% 
     filter(schedule_id == schedule_id_input)
   
-  # convert point to polygon with small buffer size
+  #2 convert point to polygon with small buffer size
   buff <- st_combine(st_buffer(station, buffer_size))
   
-  # split linestring to many linestring based on polygon splitting
+  #3 split linestring to many linestring based on polygon splitting
   all <- st_collection_extract(st_split(route$geometry, buff), "LINESTRING")
   # mapview(all) + station
   
-  # create sf data frame of linestring
+  #4 create sf data frame of linestring
   all <- st_as_sf(
     data.frame(
       order_id = 1:length(all),
@@ -85,12 +85,12 @@ split_route <- function(schedule_id_input, route_id_input, df_route, df_station,
     )
   )
   
-  # measure distance of each linestring, remove distance higher than 200 m
+  #5 measure distance of each linestring, remove distance lower than threshold value (0.25km)
   all <- all %>% 
     mutate(d = as.numeric(st_length(geometry)) * 10^-3) %>% 
     filter(d > threshold)
   
-  # get point of line start/end for each linestring
+  #6 get point of line start/end for each linestring
   point <- st_cast(all, "POINT") %>% 
     group_by(order_id) %>% 
     mutate(r = row_number()) %>% 
@@ -101,7 +101,7 @@ split_route <- function(schedule_id_input, route_id_input, df_route, df_station,
     filter(r == 1 | r2 == 1) %>% 
     select(-d)
   
-  # spatial join point of line start/end with station point based on the nearest one to get the start/end station name
+  #7 spatial join point of line start/end with station point based on the nearest one to get the start/end station name
   all_name <- st_join(point, station, join = st_is_within_distance, dist = 200) %>% 
     arrange(order_id, r) %>% 
     as.data.frame() %>% 
@@ -111,7 +111,7 @@ split_route <- function(schedule_id_input, route_id_input, df_route, df_station,
     ungroup() %>% 
     separate(line_name, c("station_start", "station_end"), sep = " - ", remove = FALSE)
   
-  # join back to get the geometry of linestring
+  #8 join back to get the geometry of linestring
   all_name %>% 
     left_join(all) 
 }
