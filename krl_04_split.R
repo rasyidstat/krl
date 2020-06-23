@@ -67,7 +67,7 @@ split_route <- function(schedule_id_input, route_id_input, df_route, df_station,
   
   #1 get station (point)
   station <- df_station %>%
-    unnest() %>% 
+    unnest(c(schedule_id)) %>% 
     filter(schedule_id == schedule_id_input)
   
   #2 convert point to polygon with small buffer size
@@ -113,7 +113,8 @@ split_route <- function(schedule_id_input, route_id_input, df_route, df_station,
   
   #8 join back to get the geometry of linestring
   all_name %>% 
-    left_join(all) 
+    left_join(all) %>% 
+    st_as_sf()
 }
 
 # test
@@ -123,6 +124,9 @@ split_route <- function(schedule_id_input, route_id_input, df_route, df_station,
 # df_station = krl_final
 # buffer_size = 0.0005
 # threshold = 0.2
+# fin <- split_route(schedule_id_input, route_id_input, df_route, df_station)
+# fin <- st_as_sf(fin)
+# mapview(fin)
 
 # check
 # mapview(point)
