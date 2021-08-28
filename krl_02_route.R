@@ -43,7 +43,7 @@ df_route <- df_route %>%
 df_route <- df_route %>%
   st_as_sf(coords = c("lon", "lat")) %>%
   group_by_at(vars(-geometry)) %>%
-  summarise(do_union = FALSE) %>%
+  summarise(do_union = FALSE, .groups = "drop") %>%
   st_cast("LINESTRING")
 
 # viz test
@@ -66,10 +66,6 @@ krl_route <- df_route %>%
          direction,
          validity,
          is_hidden)
-
-krl_route <- krl_route %>%
-  as_tibble() %>%
-  st_as_sf()
 
 st_crs(krl_route) <- 4326
 
