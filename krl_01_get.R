@@ -2,10 +2,11 @@ library(jsonlite)
 library(tidyverse)
 
 # get route info
-main_url <- "https://www.trafi.com/api/schedules/jakarta/"
+main_url <- "https://web.trafi.com/api/schedules/jakarta/"
 route <- paste0(main_url, "all?transportType=")
 
-df_krl <- fromJSON(paste0(route, "train"))[[1]] %>% unnest()
+df_krl <- fromJSON(paste0(route, "train"))[[1]] %>% 
+  unnest(cols = c(schedules))
 
 # get details for each route
 route_det <- function(schedule_id, transport) {
@@ -18,7 +19,7 @@ df_krl <- df_krl %>%
          route_info = map(route_url, fromJSON),
          load_date = Sys.Date())
 
-# save data (latest 10 Jan 2019)
+# save data (latest 28 Aug 2021)
 saveRDS(df_krl, "data/krl_detail.rds")
 
 

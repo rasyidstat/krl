@@ -8,7 +8,7 @@ df_krl <- readRDS("data/krl_detail.rds")
 
 # transform data
 df_krl <- df_krl %>%
-  as.tibble() %>%
+  as_tibble() %>%
   mutate(halte_detail = map(df_krl$route_info, "stops"),
          route = map(df_krl$route_info, "tracks")) %>%
   select(-route_info)
@@ -17,10 +17,10 @@ df_route <- df_krl %>%
   select(schedule_id = scheduleId,
          transport_id = transportId,
          validity,
-         name, long_name = longName, color,
-         route) %>%
-  unnest() %>%
-  rename(route_name = name1,
+         short_name = name, long_name = longName, 
+         color, route) %>%
+  unnest(cols = c(route)) %>%
+  rename(route_name = name,
          is_hidden = isHidden)
 
 # function
@@ -43,7 +43,7 @@ df_route <- df_route %>%
 df_route <- df_route %>%
   st_as_sf(coords = c("lon", "lat")) %>%
   group_by_at(vars(-geometry)) %>%
-  summarise(do_union = FALSE) %>%
+  summarise(do_union = FALSE, .groups = "drop") %>%
   st_cast("LINESTRING")
 
 # viz test
@@ -52,13 +52,13 @@ ggplot() +
             filter(is_hidden == FALSE,
                    direction == 1),
           aes(color = route_name)) +
-  guides(color = FALSE)
+  guides(color = "none")
 
 # finalization
 krl_route <- df_route %>%
   select(transport_id,
          schedule_id,
-         corridor_id = name,
+         corridor_id = short_name,
          corridor_name = long_name,
          corridor_color = color,
          route_id = id,
@@ -66,10 +66,6 @@ krl_route <- df_route %>%
          direction,
          validity,
          is_hidden)
-
-krl_route <- krl_route %>%
-  as.tibble() %>%
-  st_as_sf()
 
 st_crs(krl_route) <- 4326
 
@@ -91,11 +87,11 @@ krl_route <- krl_route %>%
 ua <- filter(krl_route, is_main == TRUE | is_main_reverse == TRUE)$corridor_id %>%
   unique()
 ua_neg <- setdiff(unique(krl_route$corridor_id), ua)
-n_distinct(krl_route$corridor_id) - n_distinct(ua) # 7 corridor id do not have main
+n_distinct(krl_route$corridor_id) - n_distinct(ua) # 1 corridor id do not have main
 krl_route %>%
   filter(corridor_id %in% ua_neg, is_hidden == FALSE) %>%
   .$corridor_id %>%
-  n_distinct() # still 7 use is_hidden argument
+  n_distinct() # still 1 use is_hidden argument
 
 krl_route <- krl_route %>%
   mutate(is_main = ifelse(corridor_id %in% ua_neg &
